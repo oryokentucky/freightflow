@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Factories\ShipmentFactory;
+use Database\Factories\WarehouseFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -21,5 +23,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        ShipmentFactory::new()->count(10)->create();
+
+        WarehouseFactory::new()->count(10)->create();
     }
 }
