@@ -2,7 +2,7 @@
 
 **Event-driven shipment tracking API** built with Laravel 11, GraphQL, and Redis — modeling real-world freight operations: bookings, warehouse arrivals, concurrent status transitions, and geo-based warehouse lookup.
 
-[![CI](https://github.com/YOUR_USERNAME/freightflow/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/freightflow/actions)
+[![CI](https://github.com/oryokentucky/freightflow/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/freightflow/actions)
 ![PHPStan Level 8](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-70%25%2B-blue)
 
@@ -33,7 +33,7 @@ Most demo APIs ignore the problems that actually break production systems. Freig
 ## Quickstart
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/freightflow.git
+git clone https://github.com/oryokentucky/freightflow
 cd freightflow
 cp .env.example .env
 docker compose up -d
