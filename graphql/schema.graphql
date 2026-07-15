@@ -1,0 +1,82 @@
+"FreightFlow GraphQL schema (Lighthouse). Run `php artisan lighthouse:ide-helper` after changes."
+
+type Query {
+  "Look up a single shipment by its public reference."
+  shipment(reference: String! @eq): Shipment @find
+
+  "Cursor-paginated shipment list — never expose unbounded lists."
+  shipments(
+    status: ShipmentStatus @eq
+  ): [Shipment!]! @paginate(defaultCount: 20, maxCount: 100)
+
+  "Warehouses within radiusKm of a point, nearest first. Uses a bounding-box pre-filter — see Warehouse::scopeNearby."
+  nearbyWarehouses(
+    latitude: Float!
+    longitude: Float!
+    radiusKm: Float = 50
+  ): [Warehouse!]! @field(resolver: "App\\GraphQL\\Queries\\NearbyWarehouses")
+}
+
+type Mutation {
+  "Book a new shipment between two warehouses."
+  bookShipment(input: BookShipmentInput! @spread): Shipment!
+    @field(resolver: "App\\GraphQL\\Mutations\\BookShipment")
+
+  "Mark a shipment in transit."
+  dispatchShipment(reference: String!): Shipment!
+    @field(resolver: "App\\GraphQL\\Mutations\\DispatchShipment")
+
+  """
+  Record arrival at destination. Safe under concurrency:
+  optimistic locking + transactional outbox (see RecordArrival.php).
+  """
+  recordArrival(reference: String!, occurredAt: DateTime): Shipment!
+    @field(resolver: "App\\GraphQL\\Mutations\\RecordArrival")
+}
+
+input BookShipmentInput {
+  originWarehouseCode: String!
+  destinationWarehouseCode: String!
+  weightKg: Float! @rules(apply: ["min:0.01", "max:30000"])
+}
+
+enum ShipmentStatus {
+  BOOKED @enum(value: "booked")
+  IN_TRANSIT @enum(value: "in_transit")
+  ARRIVED @enum(value: "arrived")
+  DELIVERED @enum(value: "delivered")
+  CANCELLED @enum(value: "cancelled")
+}
+
+type Shipment {
+  id: ID!
+  reference: String!
+  status: ShipmentStatus!
+  weightKg: Float! @rename(attribute: "weight_kg")
+  originWarehouse: Warehouse! @belongsTo
+  destinationWarehouse: Warehouse! @belongsTo
+  "Full audit trail of status transitions."
+  events: [ShipmentEvent!]! @hasMany
+  arrivedAt: DateTime @rename(attribute: "arrived_at")
+  deliveredAt: DateTime @rename(attribute: "delivered_at")
+  createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type ShipmentEvent {
+  id: ID!
+  fromStatus: String @rename(attribute: "from_status")
+  toStatus: String! @rename(attribute: "to_status")
+  occurredAt: DateTime! @rename(attribute: "occurred_at")
+}
+
+type Warehouse {
+  id: ID!
+  code: String!
+  name: String!
+  latitude: Float!
+  longitude: Float!
+  "Distance from the query point in km — only populated by nearbyWarehouses."
+  distanceKm: Float @rename(attribute: "distance_km")
+}
+
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
