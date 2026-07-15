@@ -15,7 +15,7 @@ class WarehouseFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => 'WH-'.strtoupper($this->faker->unique()->bothify('???-##')),
+            'code' => 'WH-' . str_pad((string) fake()->unique()->numberBetween(1, 9999999), 7, '0', STR_PAD_LEFT),
             'name' => $this->faker->city().' Distribution Center',
             // Cluster around Peninsular Malaysia by default:
             'latitude' => $this->faker->randomFloat(7, 1.3, 6.5),

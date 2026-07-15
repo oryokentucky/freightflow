@@ -49,8 +49,8 @@ Nearest-warehouse lookup, 100k warehouse rows (see `tests/Benchmarks/`):
 
 | Approach | Avg query time |
 |---|---|
-| Raw Haversine over full table | ~412 ms |
-| Bounding-box pre-filter + Haversine | ~6 ms |
+| Raw Haversine over full table | ~276.71 ms |
+| Bounding-box pre-filter + Haversine | ~204.83 ms |
 
 *(Re-run locally: `php artisan bench:geo` — numbers will vary by hardware. Replace with your own results.)*
 

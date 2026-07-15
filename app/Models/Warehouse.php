@@ -44,9 +44,13 @@ class Warehouse extends Model
         // 1 degree of longitude shrinks with latitude.
         $lngDelta = $radiusKm / (111.045 * max(cos(deg2rad($lat)), 1e-6));
 
+        $cos = 'cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))';
+
         $haversine = sprintf(
-            '(%f * acos(least(1.0, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))))',
+            '(%f * acos(CASE WHEN (%s) > 1 THEN 1.0 ELSE (%s) END))',
             self::EARTH_RADIUS_KM,
+            $cos,
+            $cos,
         );
 
         return $query
@@ -54,8 +58,8 @@ class Warehouse extends Model
             ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
             ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta])
             // Exact distance only on surviving rows:
-            ->selectRaw("*, {$haversine} AS distance_km", [$lat, $lng, $lat])
-            ->having('distance_km', '<=', $radiusKm)
+            ->selectRaw("*, {$haversine} AS distance_km", [$lat, $lng, $lat, $lat, $lng, $lat])
+            ->whereRaw("({$haversine}) <= ?", [$lat, $lng, $lat, $lat, $lng, $lat, $radiusKm])
             ->orderBy('distance_km');
     }
 }

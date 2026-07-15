@@ -28,17 +28,34 @@ class BenchmarkGeoQuery extends Command
             $this->info("Seeding up to {$target} warehouses (one-time)...");
             $existing = Warehouse::query()->count();
             for ($i = $existing; $i < $target; $i += 1000) {
-                Warehouse::factory()->count(min(1000, $target - $i))->create();
+                $batch = min(1000, $target - $i);
+                $rows = [];
+                for($j=0; $j< $batch; $j++){
+                    $code = 'WH-' . str_pad((string) mt_rand(1, 9999999), 7, '0', STR_PAD_LEFT);
+
+                $row[]=[
+                    'code' => $code,
+                    'name' => fake()->city().' Distribution Center',
+                    'latitude' => fake()->randomFloat(7, 1.3, 6.5),
+                    'longitude' => fake()->randomFloat(7, 99.7, 104.3),
+                    'capacity_pallets' => rand(200, 5000),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+            DB::table('warehouses')->insert($rows);
             }
         }
 
         [$lat, $lng, $radius] = [3.1579, 101.7123, 50.0];
 
         $naive = fn () => DB::select(
-            'SELECT id, (6371 * acos(least(1.0, cos(radians(?)) * cos(radians(latitude))
-             * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))) AS d
-             FROM warehouses HAVING d <= ? ORDER BY d LIMIT 25',
-            [$lat, $lng, $lat, $radius],
+            'SELECT * FROM (SELECT id, (6371 * acos(CASE WHEN (cos(radians(?)) * cos(radians(latitude))
+             * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))) > 1 THEN 1.0
+             ELSE (cos(radians(?)) * cos(radians(latitude))
+             * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))) END)) AS d
+             FROM warehouses) _geo WHERE d <= ? ORDER BY d LIMIT 25',
+            [$lat, $lng, $lat, $lat, $lng, $lat, $radius],
         );
 
         $optimized = fn () => Warehouse::query()->nearby($lat, $lng, $radius)->limit(25)->get();
